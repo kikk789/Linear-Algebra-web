@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm create:*)",
+      "Bash(cp /tmp/vite-init/.gitignore /tmp/vite-init/eslint.config.js /tmp/vite-init/index.html /tmp/vite-init/package.json /tmp/vite-init/vite.config.js \"C:/Users/ChangHee/Linear-Algebra/\")",
+      "Bash(cp -r /tmp/vite-init/public \"C:/Users/ChangHee/Linear-Algebra/\")",
+      "Bash(mkdir -p \"C:/Users/ChangHee/Linear-Algebra/src\")",
+      "Bash(cp /tmp/vite-init/src/main.jsx \"C:/Users/ChangHee/Linear-Algebra/src/\")",
+      "Bash(npm install:*)",
+      "Bash(npm run:*)",
+      "mcp__Claude_Preview__preview_start"
+    ]
+  }
+}
