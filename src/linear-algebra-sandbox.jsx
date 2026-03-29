@@ -66,8 +66,10 @@ const COLORS = {
 };
 
 const PRESETS = {
-  "회전 90°": [0, -1, 1, 0],
-  "회전 45°": [0.707, -0.707, 0.707, 0.707],
+  "회전 90° ↺": [0, -1, 1, 0],
+  "회전 90° ↻": [0, 1, -1, 0],
+  "회전 45° ↺": [0.707, -0.707, 0.707, 0.707],
+  "회전 45° ↻": [0.707, 0.707, -0.707, 0.707],
   "전단 (Shear)": [1, 1, 0, 1],
   "스케일 2x": [2, 0, 0, 2],
   "반사 (x축)": [1, 0, 0, -1],
@@ -825,6 +827,23 @@ export default function LinearAlgebraSandbox() {
                 {Object.entries(PRESETS).map(([name, mat]) => (
                   <button key={name} onClick={() => applyTransform(mat, name)} style={{ ...sBtn(), textAlign: "center" }} disabled={isAnimating}>{name}</button>
                 ))}
+              </div>
+              {/* Custom rotation input */}
+              <div style={{ marginTop: 6, display: "flex", gap: 4, alignItems: "center" }}>
+                <span style={{ fontSize: 9, opacity: 0.6, whiteSpace: "nowrap" }}>회전</span>
+                <input id="rotAngleInput" defaultValue="30" style={{ ...inp(COLORS.accent), width: 48, textAlign: "center" }} />
+                <span style={{ fontSize: 9, opacity: 0.5 }}>°</span>
+                <button onClick={() => { const v = parseFloat(document.getElementById("rotAngleInput").value); if (isNaN(v)) return; const r = v * Math.PI / 180; applyTransform([Math.cos(r), -Math.sin(r), Math.sin(r), Math.cos(r)], `회전 ${v}° ↺`); }} disabled={isAnimating} style={{ ...sBtn(COLORS.accent), fontSize: 9, padding: "3px 6px" }}>↺</button>
+                <button onClick={() => { const v = parseFloat(document.getElementById("rotAngleInput").value); if (isNaN(v)) return; const r = -v * Math.PI / 180; applyTransform([Math.cos(r), -Math.sin(r), Math.sin(r), Math.cos(r)], `회전 ${v}° ↻`); }} disabled={isAnimating} style={{ ...sBtn(COLORS.accent), fontSize: 9, padding: "3px 6px" }}>↻</button>
+              </div>
+              {/* Custom shear input */}
+              <div style={{ marginTop: 4, display: "flex", gap: 4, alignItems: "center" }}>
+                <span style={{ fontSize: 9, opacity: 0.6, whiteSpace: "nowrap" }}>전단</span>
+                <input id="shearInput" defaultValue="1" style={{ ...inp(COLORS.vecOrange), width: 48, textAlign: "center" }} />
+                <button onClick={() => { const v = parseFloat(document.getElementById("shearInput").value); if (isNaN(v)) return; applyTransform([1, v, 0, 1], `전단 x→ ${v}`); }} disabled={isAnimating} style={{ ...sBtn(COLORS.vecOrange), fontSize: 9, padding: "3px 6px" }}>x→</button>
+                <button onClick={() => { const v = parseFloat(document.getElementById("shearInput").value); if (isNaN(v)) return; applyTransform([1, -v, 0, 1], `전단 x← ${v}`); }} disabled={isAnimating} style={{ ...sBtn(COLORS.vecOrange), fontSize: 9, padding: "3px 6px" }}>x←</button>
+                <button onClick={() => { const v = parseFloat(document.getElementById("shearInput").value); if (isNaN(v)) return; applyTransform([1, 0, v, 1], `전단 y↑ ${v}`); }} disabled={isAnimating} style={{ ...sBtn(COLORS.vecOrange), fontSize: 9, padding: "3px 6px" }}>y↑</button>
+                <button onClick={() => { const v = parseFloat(document.getElementById("shearInput").value); if (isNaN(v)) return; applyTransform([1, 0, -v, 1], `전단 y↓ ${v}`); }} disabled={isAnimating} style={{ ...sBtn(COLORS.vecOrange), fontSize: 9, padding: "3px 6px" }}>y↓</button>
               </div>
               <button onClick={() => setShowMatrixEditor(!showMatrixEditor)} style={{ ...btn(showMatrixEditor), marginTop: 6, width: "100%" }}>사용자 정의 행렬</button>
               <Help>
