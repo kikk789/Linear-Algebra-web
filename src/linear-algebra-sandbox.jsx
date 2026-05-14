@@ -354,16 +354,41 @@ export default function LinearAlgebraSandbox() {
           const [s1x, s1y] = worldToScreen(dir[0]*-tgSteps, dir[1]*-tgSteps);
           const [s2x, s2y] = worldToScreen(dir[0]*tgSteps, dir[1]*tgSteps);
           ctx.beginPath(); ctx.moveTo(s1x, s1y); ctx.lineTo(s2x, s2y); ctx.stroke();
+          const isUnit = Math.abs(len - 1) < 0.01;
           vectorsRef.current.filter(v => !v.basis && v.id !== dotVecIdx).forEach(v => {
             const proj = v.x*dir[0] + v.y*dir[1];
+            const dot = proj * len;
             const px = dir[0]*proj, py = dir[1]*proj;
             const [psx, psy] = worldToScreen(px, py);
             const [vsx, vsy] = worldToScreen(v.x, v.y);
             ctx.strokeStyle = "rgba(255,255,255,0.3)"; ctx.setLineDash([4, 4]);
             ctx.beginPath(); ctx.moveTo(vsx, vsy); ctx.lineTo(psx, psy); ctx.stroke(); ctx.setLineDash([]);
             ctx.fillStyle = COLORS.vecOrange; ctx.beginPath(); ctx.arc(psx, psy, 5, 0, Math.PI*2); ctx.fill();
+            if (!isUnit && Math.abs(proj) > 0.01) {
+              const dx = dir[0]*proj*len, dy = dir[1]*proj*len;
+              const [dsx, dsy] = worldToScreen(dx, dy);
+              ctx.strokeStyle = "rgba(253,203,110,0.9)"; ctx.lineWidth = 3;
+              ctx.beginPath(); ctx.moveTo(psx, psy); ctx.lineTo(dsx, dsy); ctx.stroke();
+              const ang = Math.atan2(dsy - psy, dsx - psx);
+              const ah = 8;
+              ctx.beginPath();
+              ctx.moveTo(dsx, dsy);
+              ctx.lineTo(dsx - ah*Math.cos(ang - Math.PI/6), dsy - ah*Math.sin(ang - Math.PI/6));
+              ctx.lineTo(dsx - ah*Math.cos(ang + Math.PI/6), dsy - ah*Math.sin(ang + Math.PI/6));
+              ctx.closePath(); ctx.fillStyle = "rgba(253,203,110,0.9)"; ctx.fill();
+              ctx.fillStyle = "#ffd93d";
+              ctx.beginPath(); ctx.arc(dsx, dsy, 4, 0, Math.PI*2); ctx.fill();
+            }
             ctx.font = "11px 'JetBrains Mono', monospace";
-            ctx.fillText(`dot=${proj.toFixed(2)}`, psx + 8, psy - 8);
+            if (isUnit) {
+              ctx.fillStyle = COLORS.vecOrange;
+              ctx.fillText(`dot=${dot.toFixed(2)}`, psx + 8, psy - 8);
+            } else {
+              ctx.fillStyle = COLORS.vecOrange;
+              ctx.fillText(`proj=${proj.toFixed(2)}`, psx + 8, psy - 8);
+              ctx.fillStyle = "#ffd93d";
+              ctx.fillText(`dot=${dot.toFixed(2)}`, psx + 8, psy + 6);
+            }
           });
         }
       }
@@ -1080,12 +1105,18 @@ export default function LinearAlgebraSandbox() {
 4. 나머지 벡터(v2, v3...)가 v1 방향 직선에 수직 투영됨
 5. 점선 + dot=값 표시
 
-📝 예시
+📝 예시 (|v₁|=1 단위벡터)
 • v1=(1,0), v2=(3,2) → dot=3 (x성분만 살아남음)
-• v1=(1,1), v2=(2,-1) → dot=1 (직교에 가까움)
-• v1=(1,0), v2=(0,5) → dot=0 (완전 수직 = 투영길이 0)
+• v1=(1,0), v2=(0,5) → dot=0 (완전 수직)
 
-💡 dot > 0: 같은 방향, dot < 0: 반대 방향, dot = 0: 수직`}
+📝 예시 (|v₁|≠1 — 쌍대성 분해가 보임)
+• v1=(2,0), v2=(3,2)
+   proj=3 (단위방향 v̂₁ 위 투영 길이)
+   dot=6 (|v₁|=2 배 스케일 후 = 진짜 내적)
+   주황 점=투영점, 노란 점=내적값 위치
+
+💡 dot > 0: 같은 방향, dot < 0: 반대 방향, dot = 0: 수직
+💡 |v₁|=1이면 proj=dot (한 줄로 표시됨)`}
               </Help>
               <button onClick={() => {
                 if (userVecs.length < 2) { showToast("벡터를 2개 이상 추가해주세요. 1개는 투영 기준선, 나머지가 투영됩니다."); return; }
