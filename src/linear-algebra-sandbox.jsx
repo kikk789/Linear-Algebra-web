@@ -134,6 +134,7 @@ export default function LinearAlgebraSandbox() {
   const [showAltBasis, setShowAltBasis] = useState(false);
   const [altBasis, setAltBasis] = useState([[1, 1], [-1, 1]]);
   const [showDotProjection, setShowDotProjection] = useState(false);
+  const [showDotFormula, setShowDotFormula] = useState(true);
   const [dotVecIdx, setDotVecIdx] = useState(null);
 
   const [matInput, setMatInput] = useState(["1","0","0","1"]);
@@ -364,6 +365,33 @@ export default function LinearAlgebraSandbox() {
             ctx.strokeStyle = "rgba(255,255,255,0.3)"; ctx.setLineDash([4, 4]);
             ctx.beginPath(); ctx.moveTo(vsx, vsy); ctx.lineTo(psx, psy); ctx.stroke(); ctx.setLineDash([]);
             ctx.fillStyle = COLORS.vecOrange; ctx.beginPath(); ctx.arc(psx, psy, 5, 0, Math.PI*2); ctx.fill();
+            const fmtNum = (n) => {
+              const r = Math.round(n * 100) / 100;
+              const s = Number.isInteger(r) ? `${r}` : (Math.abs(r - Math.round(r * 10) / 10) < 0.001 ? (r * 10 / 10).toFixed(1) : r.toFixed(2));
+              return n < 0 ? `(${s})` : s;
+            };
+            const residualX = v.x - px, residualY = v.y - py;
+            const residualLen = Math.sqrt(residualX*residualX + residualY*residualY);
+            const wSq = v.x*v.x + v.y*v.y;
+            const projSq = proj * proj;
+            if (residualLen > 0.1) {
+              const midSx = (vsx + psx) / 2, midSy = (vsy + psy) / 2;
+              ctx.font = "10px 'JetBrains Mono', monospace";
+              ctx.fillStyle = "rgba(255,255,255,0.75)";
+              ctx.fillText(showDotFormula ? `잔차=√(${wSq.toFixed(1)}-${projSq.toFixed(1)})=${residualLen.toFixed(2)}` : `잔차=${residualLen.toFixed(2)}`, midSx + 6, midSy);
+              const vSdx = s2x - s1x, vSdy = s2y - s1y;
+              const vSdl = Math.sqrt(vSdx*vSdx + vSdy*vSdy);
+              const vSdNx = vSdx / vSdl, vSdNy = vSdy / vSdl;
+              const rSdx = vsx - psx, rSdy = vsy - psy;
+              const rSdl = Math.sqrt(rSdx*rSdx + rSdy*rSdy);
+              const rSdNx = rSdx / rSdl, rSdNy = rSdy / rSdl;
+              const ms = 10;
+              const aX = psx - vSdNx * ms, aY = psy - vSdNy * ms;
+              const bX = psx - rSdNx * ms, bY = psy - rSdNy * ms;
+              const cX = aX - rSdNx * ms, cY = aY - rSdNy * ms;
+              ctx.strokeStyle = "rgba(255,255,255,0.8)"; ctx.lineWidth = 1.5;
+              ctx.beginPath(); ctx.moveTo(aX, aY); ctx.lineTo(cX, cY); ctx.lineTo(bX, bY); ctx.stroke();
+            }
             if (!isUnit && Math.abs(proj) > 0.01) {
               const dx = dir[0]*proj*len, dy = dir[1]*proj*len;
               const [dsx, dsy] = worldToScreen(dx, dy);
@@ -380,14 +408,15 @@ export default function LinearAlgebraSandbox() {
               ctx.beginPath(); ctx.arc(dsx, dsy, 4, 0, Math.PI*2); ctx.fill();
             }
             ctx.font = "11px 'JetBrains Mono', monospace";
+            const dotFormula = `${fmtNum(dv.x)}·${fmtNum(v.x)}+${fmtNum(dv.y)}·${fmtNum(v.y)}`;
             if (isUnit) {
               ctx.fillStyle = COLORS.vecOrange;
-              ctx.fillText(`dot=${dot.toFixed(2)}`, psx + 8, psy - 8);
+              ctx.fillText(showDotFormula ? `dot=${dotFormula}=${dot.toFixed(2)}` : `dot=${dot.toFixed(2)}`, psx + 8, psy - 8);
             } else {
               ctx.fillStyle = COLORS.vecOrange;
-              ctx.fillText(`proj=${proj.toFixed(2)}`, psx + 8, psy - 8);
+              ctx.fillText(showDotFormula ? `proj=${dot.toFixed(2)}/${len.toFixed(2)}=${proj.toFixed(2)}` : `proj=${proj.toFixed(2)}`, psx + 8, psy - 8);
               ctx.fillStyle = "#ffd93d";
-              ctx.fillText(`dot=${dot.toFixed(2)}`, psx + 8, psy + 6);
+              ctx.fillText(showDotFormula ? `dot=${dotFormula}=${dot.toFixed(2)}` : `dot=${dot.toFixed(2)}`, psx + 8, psy + 6);
             }
           });
         }
@@ -485,7 +514,7 @@ export default function LinearAlgebraSandbox() {
       ctx.fillStyle = "#fff"; ctx.textAlign = "center";
       ctx.fillText(tooltip.text, tooltip.x, tooltip.y - 14);
     }
-  }, [canvasSize, showDeterminant, showRefGrid, showEigen, showAltBasis, altBasis, showDotProjection, dotVecIdx, selectedForCross, tooltip, matVecHighlight, worldToScreen, getEffectiveMatrix]);
+  }, [canvasSize, showDeterminant, showRefGrid, showEigen, showAltBasis, altBasis, showDotProjection, showDotFormula, dotVecIdx, selectedForCross, tooltip, matVecHighlight, worldToScreen, getEffectiveMatrix]);
 
   // Animation loop
   useEffect(() => {
@@ -1098,6 +1127,12 @@ export default function LinearAlgebraSandbox() {
    내적은 사실 "1×2 행렬을 곱하는 것"과 같습니다.
    벡터를 행렬로 보면 공간을 수직선으로 투영하는 변환입니다.
 
+📌 잔차(Residual)
+   v₂에서 투영점까지의 수직 거리 = |v₂ − 투영벡터|.
+   흰 점선의 길이로 표시되고, 라벨 "잔차=N.NN"으로 확인.
+   직각 마커(ㄱ)가 투영점에 표시되어 잔차 ⊥ v₁ 직교성을 보여줌.
+   회귀의 최소제곱법이 이 잔차 길이를 최소화하는 작업.
+
 🔧 사용법
 1. 벡터를 2개 이상 추가 (①번)
 2. "투영선 표시" 켜기
@@ -1124,6 +1159,9 @@ export default function LinearAlgebraSandbox() {
               }} style={btn(showDotProjection)}>{showDotProjection ? "■" : "□"} 투영선 표시</button>
               <div style={{ fontSize: 9, opacity: 0.4, marginTop: 2 }}>기준 벡터 1개 선택 → 나머지 벡터들이 그 방향에 투영됩니다</div>
               {showDotProjection && <select value={dotVecIdx||""} onChange={e => setDotVecIdx(Number(e.target.value))} style={{ ...inp(), marginTop: 4 }}>{userVecs.map(v => <option key={v.id} value={v.id}>{v.label}</option>)}</select>}
+              {showDotProjection && (
+                <button onClick={() => setShowDotFormula(!showDotFormula)} style={{ ...btn(showDotFormula), marginTop: 4 }}>{showDotFormula ? "■" : "□"} 계산식 표시</button>
+              )}
               {showDotProjection && userVecs.length < 2 && (
                 <div style={{ fontSize: 10, color: COLORS.vecOrange, marginTop: 4 }}>⚠ 투영할 벡터가 없습니다. 벡터를 추가해주세요.</div>
               )}
