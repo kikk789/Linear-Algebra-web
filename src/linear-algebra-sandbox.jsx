@@ -356,7 +356,7 @@ export default function LinearAlgebraSandbox() {
           const [s2x, s2y] = worldToScreen(dir[0]*tgSteps, dir[1]*tgSteps);
           ctx.beginPath(); ctx.moveTo(s1x, s1y); ctx.lineTo(s2x, s2y); ctx.stroke();
           const isUnit = Math.abs(len - 1) < 0.01;
-          vectorsRef.current.filter(v => !v.basis && v.id !== dotVecIdx).forEach(v => {
+          vectorsRef.current.filter(v => !v.basis && v.id !== dotVecIdx).forEach((v, idx) => {
             const proj = v.x*dir[0] + v.y*dir[1];
             const dot = proj * len;
             const px = dir[0]*proj, py = dir[1]*proj;
@@ -406,6 +406,37 @@ export default function LinearAlgebraSandbox() {
               ctx.closePath(); ctx.fillStyle = "rgba(253,203,110,0.9)"; ctx.fill();
               ctx.fillStyle = "#ffd93d";
               ctx.beginPath(); ctx.arc(dsx, dsy, 4, 0, Math.PI*2); ctx.fill();
+            }
+            // 각도 호 + θ°·cos 라벨 (원점 주변)
+            const v2len = Math.sqrt(v.x*v.x + v.y*v.y);
+            if (v2len > 0.01) {
+              const cosTheta = Math.max(-1, Math.min(1, proj / v2len));
+              const thetaDeg = Math.acos(cosTheta) * 180 / Math.PI;
+              if (thetaDeg > 2 && thetaDeg < 178) {
+                const [ox, oy] = worldToScreen(0, 0);
+                const [v1tx, v1ty] = worldToScreen(dir[0], dir[1]);
+                const a1 = Math.atan2(v1ty - oy, v1tx - ox);
+                const a2 = Math.atan2(vsy - oy, vsx - ox);
+                let diff = a2 - a1;
+                while (diff > Math.PI) diff -= 2*Math.PI;
+                while (diff < -Math.PI) diff += 2*Math.PI;
+                const arcR = 28 + idx * 14;
+                ctx.strokeStyle = "rgba(253,203,110,0.85)";
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.arc(ox, oy, arcR, a1, a2, diff < 0);
+                ctx.stroke();
+                const midA = a1 + diff / 2;
+                const lx = ox + Math.cos(midA) * (arcR + 20);
+                const ly = oy + Math.sin(midA) * (arcR + 20);
+                ctx.font = "11px 'JetBrains Mono', monospace";
+                ctx.fillStyle = "#ffd93d";
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.fillText(`θ=${thetaDeg.toFixed(0)}° cos=${cosTheta.toFixed(2)}`, lx, ly);
+                ctx.textAlign = "left";
+                ctx.textBaseline = "alphabetic";
+              }
             }
             ctx.font = "11px 'JetBrains Mono', monospace";
             const dotFormula = `${fmtNum(dv.x)}·${fmtNum(v.x)}+${fmtNum(dv.y)}·${fmtNum(v.y)}`;
